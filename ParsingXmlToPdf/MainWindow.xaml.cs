@@ -19,7 +19,6 @@ using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System.IO;
 
-
 namespace ParsingXmlToPdf
 {
     /// <summary>
@@ -90,31 +89,36 @@ namespace ParsingXmlToPdf
             filecreate.Title = "Создай пдф файл и выбери его";
             filecreate.Filter = "Пдв файл|*pdf;*.*";
             if (filecreate.ShowDialog() == true)
-            {            
-                PdfWriter.GetInstance(doc, new FileStream(filecreate.FileName, FileMode.Create));
-                doc.Open();
+            {
+                using (FileStream fs = new FileStream(filecreate.FileName, FileMode.Create))
+                { 
+                    PdfWriter.GetInstance(doc, fs);
+                    doc.Open();
 
-                PdfPTable table = new PdfPTable(3);
-                PdfPCell cell = new PdfPCell();
-                cell.HorizontalAlignment = 1;
-                cell.Border = 0;
-                string[] tablesname = { "Name", "Company", "Age" };
+                    PdfPTable table = new PdfPTable(3);
+                    PdfPCell cell = new PdfPCell();
+                    cell.HorizontalAlignment = 1;
+                    cell.Border = 0;
+                    string[] tablesname = { "Name", "Company", "Age" };
 
-                foreach (string name in tablesname)
-                {
-                    cell = new PdfPCell(new Phrase(name));
-                    cell.BackgroundColor = BaseColor.CYAN;
-                    table.AddCell(cell);
+                    foreach (string name in tablesname)
+                    {
+                        cell = new PdfPCell(new Phrase(name));
+                        cell.BackgroundColor = BaseColor.CYAN;
+                        table.AddCell(cell);
+                    }
+                    foreach (Person u in users)
+                    {
+                        table.AddCell(new Phrase(u.Name));
+                        table.AddCell(new Phrase(u.Company));
+                        table.AddCell(new Phrase($"{u.Age}"));
+                    }
+                    doc.Add(table);
+                    doc.Close();
+                    ContentXml.Text = $"Данные успешно сохранены в {filecreate.FileName.ToString()}";
                 }
-                foreach (Person u in users)
-                {
-                    table.AddCell(new Phrase(u.Name));
-                    table.AddCell(new Phrase(u.Company));
-                    table.AddCell(new Phrase($"{u.Age}"));
-                }
-                doc.Add(table);
-                doc.Close();
-                ContentXml.Text = $"Данные успешно сохранены в {filecreate.FileName}";
+                
+                
             }
         }
 
