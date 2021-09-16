@@ -36,6 +36,8 @@ namespace ParsingXmlToPdf
 
         private void SelectXml_Click(object sender, RoutedEventArgs e)
         {
+
+
             OpenFileDialog xmlfile = new OpenFileDialog();
             xmlfile.Filter = "Xml |*.xml|Все файлы|*.*";
             if(xmlfile.ShowDialog() == true)
@@ -45,27 +47,27 @@ namespace ParsingXmlToPdf
                 XmlDocument xdoc = new XmlDocument();
                 xdoc.Load(xmlfile.FileName);
                 XmlElement xRoot = xdoc.DocumentElement;
-                foreach(XmlNode xnode in xRoot)
+                foreach (XmlNode xnode in xRoot)
                 {
                     Person user = new Person();
                     foreach (XmlNode childnode in xnode.ChildNodes)
                     {
-                        
-                        if(childnode.Name == "Name")
+
+                        if (childnode.Name == "Name")
                         {
                             //ContentXml.Text += $"{childnode.InnerText}\n";
                             user.Name = childnode.InnerText;
                         }
-                        if(childnode.Name == "Age")
+                        if (childnode.Name == "Age")
                         {
                             //ContentXml.Text += $"{childnode.InnerText}\n";
                             user.Age = Convert.ToInt32(childnode.InnerText);
                         }
-                        if(childnode.Name == "Company")
+                        if (childnode.Name == "Company")
                         {
-                            foreach(XmlNode companyname in childnode)
+                            foreach (XmlNode companyname in childnode)
                             {
-                                if(companyname.Name == "Name")
+                                if (companyname.Name == "Name")
                                 {
                                     //ContentXml.Text += $"{companyname.InnerText}\n---------\n";
                                     user.Company = companyname.InnerText;
@@ -75,31 +77,63 @@ namespace ParsingXmlToPdf
                     }
                     users.Add(user);
                 }
-                foreach(Person u in users)
+
+                users = GrouPerson();
+
+                foreach (Person u in users)
                 {
-                    ContentXml.Text += $"Имя: {u.Name}\nКомпания: {u.Company}\nВозраст: {u.Age}\n________________\n";
+                    ContentXml.Text += $"{u.Number}. Имя: {u.Name}\nКомпания: {u.Company}\nВозраст: {u.Age}\n________________\n";
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// Группируем  людей  по  компаниям
+        /// </summary>
+        /// <returns></returns>
+        private List<Person> GrouPerson()
+        {
+            var us = users.GroupBy(x => x.Company);
+            List<Person> newList = new List<Person>();
+
+            foreach (var usCompany in us)
+            {
+                int step = 1;
+                foreach (var person in usCompany.OrderBy(x=>x.Name))
+                {
+                    newList.Add(new Person()
+                    {
+                        Age = person.Age,
+                        Company = person.Company
+                    ,
+                        Name = person.Name,
+                        Number = step
+                    });
+                    step++;
                 }
             }
+            return newList;
         }
 
         private void ParsingToPdf_Click(object sender, RoutedEventArgs e)
         {
             Document doc = new Document();
-            OpenFileDialog filecreate = new OpenFileDialog();
-            filecreate.Title = "Создай пдф файл и выбери его";
-            filecreate.Filter = "Пдв файл|*pdf;*.*";
-            if (filecreate.ShowDialog() == true)
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Title = "Укажите путь куда сохранить файл";
+            saveFileDialog.Filter = "PDF Файл (*.pdf)|*.pdf";
+            if (saveFileDialog.ShowDialog() == true)
             {
-                using (FileStream fs = new FileStream(filecreate.FileName, FileMode.Create))
+                using (FileStream fs = new FileStream(saveFileDialog.FileName, FileMode.Create))
                 { 
                     PdfWriter.GetInstance(doc, fs);
                     doc.Open();
 
-                    PdfPTable table = new PdfPTable(3);
+                    PdfPTable table = new PdfPTable(4);
                     PdfPCell cell = new PdfPCell();
                     cell.HorizontalAlignment = 1;
                     cell.Border = 0;
-                    string[] tablesname = { "Name", "Company", "Age" };
+                    string[] tablesname = {"Number" , "Name", "Company", "Age" };
 
                     foreach (string name in tablesname)
                     {
@@ -107,24 +141,24 @@ namespace ParsingXmlToPdf
                         cell.BackgroundColor = BaseColor.CYAN;
                         table.AddCell(cell);
                     }
+                    
                     foreach (Person u in users)
                     {
+                        table.AddCell(new Phrase(u.Number.ToString()));
                         table.AddCell(new Phrase(u.Name));
                         table.AddCell(new Phrase(u.Company));
                         table.AddCell(new Phrase($"{u.Age}"));
                     }
                     doc.Add(table);
                     doc.Close();
-                    ContentXml.Text = $"Данные успешно сохранены в {filecreate.FileName.ToString()}";
+                    ContentXml.Text = $"Данные успешно сохранены в {saveFileDialog.FileName.ToString()}";
                 }
-                
-                
             }
         }
-
     }
     public class Person
     {
+        public int Number { get; set; }
         public string Name { get; set; }
         public int Age { get; set; }
         public string Company { get; set; }
